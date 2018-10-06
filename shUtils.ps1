@@ -2,7 +2,7 @@ Function Show-NicTeamProperties($NicTeamName)
 {
     # See also: https://personalnexus.wordpress.com/2018/04/29/the-case-of-multicast-message-loss-again/
 
-    (Get-NetLbfoTeam $NicTeamName).Members | Get-NetAdapterAdvancedProperty | ft DisplayName,DisplayValue,ValidDisplayValues,NumericParameterMaxValue
+    (Get-NetLbfoTeam $NicTeamName).Members | Foreach-Object {Get-NetAdapter -Name $_ | Get-NetAdapterAdvancedProperty | ft DisplayName,DisplayValue,NumericParameterMaxValue,ValidDisplayValues}
 }
 
 
