@@ -74,3 +74,21 @@ Function Convert-UsernameToSid($Domain = "", $Username)
     }
     return $result
 }
+
+
+Function Set-WorkStationLockTime($Time = '7PM')
+{
+    # See also:
+    #     https://devblogs.microsoft.com/scripting/use-powershell-to-create-scheduled-tasks/
+    #     https://devblogs.microsoft.com/scripting/powertip-use-powershell-to-delete-scheduled-task/
+
+    $scheduledTaskAction = New-ScheduledTaskAction -Execute 'rundll32.exe' -Argument 'user32.dll,LockWorkStation'
+    $scheduledTaskTrigger = New-ScheduledTaskTrigger -Daily -At $Time
+    $scheduledTaskName = "LockWorkStation$Time"
+    
+    Get-ScheduledTask $scheduledTaskName -ErrorAction SilentlyContinue| Unregister-ScheduledTask -Confirm:$false
+
+    Register-ScheduledTask -Action $scheduledTaskAction -Trigger $scheduledTaskTrigger -TaskName $scheduledTaskName -Description "Lock the workstation at $Time" | Out-Null
+    
+    Get-ScheduledTask $scheduledTaskName | fl TaskName,Description,State
+}
