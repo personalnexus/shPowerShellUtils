@@ -92,3 +92,51 @@ Function Set-WorkStationLockTime($Time = '7PM')
     
     Get-ScheduledTask $scheduledTaskName | fl TaskName,Description,State
 }
+
+Function Start-PerformanceLog($LogFilePath, 
+                              $Counters = $null, 
+                              $StartTime = (New-TimeSpan), 
+                              $StopTime = (New-TimeSpan -Hours 23 -Minutes 59 -Seconds 59), 
+                              $IntervalSeconds = 30)
+{
+    if ($Counters -eq $null)
+    {
+        $Counters = @("IDProcess",
+                      "Name",
+                      "PercentProcessorTime",
+                      "PageFaultsPersec",
+                      "PrivateBytes",
+                      "WorkingSet",
+                      "ThreadCount",
+                      "HandleCount")
+    }
+    # Convert certain counters to GB to more easily spot huge memory usage
+    if ($Counters.Contains("PrivateBytes"))
+    {
+        $Counters += @{label="PrivateBytesGB"; expression={$_.PrivateBytes/1GB}}
+    }
+    if ($Counters.Contains("WorkingSet"))
+    {
+        $Counters += @{label="WorkingSetGB"; expression={$_.WorkingSet/1GB}}
+    }
+    $Counters += @{label="Timestamp"; expression={Get-Date}}
+
+    while ((Get-Date).TimeOfDay -lt $StartTime)
+    {
+        Start-Sleep -Seconds 1
+    }
+
+    Write-Host "$(Get-Date) Logging at $LogFilePath from $StartTime to $StopTime..."
+
+    $Iterations = 0
+    while ((Get-Date).TimeOfDay -lt $StopTime )
+    {
+        $Iterations += 1   
+        Get-WmiObject Win32_PerfFormattedData_PerfProc_Process | ` 
+            Select-Object $Counters | `
+            Export-Csv -Path $LogFilePath -Delimiter ";" -Force -Append -NoTypeInformation
+        Start-Sleep -Seconds $IntervalSeconds
+    }
+
+    Write-Host "$(Get-Date) Finished logging after $Iterations iterations."
+}
