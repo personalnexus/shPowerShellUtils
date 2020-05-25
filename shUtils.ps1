@@ -2,7 +2,7 @@ Function Show-NicTeamProperties($NicTeamName)
 {
     # See also: https://personalnexus.wordpress.com/2018/04/29/the-case-of-multicast-message-loss-again/
 
-    (Get-NetLbfoTeam $NicTeamName).Members | Foreach-Object {Get-NetAdapter -Name $_ | Get-NetAdapterAdvancedProperty | ft DisplayName,DisplayValue,NumericParameterMaxValue,ValidDisplayValues}
+    (Get-NetLbfoTeam $NicTeamName).Members | Foreach-Object {Get-NetAdapter -Name $_ | Get-NetAdapterAdvancedProperty | Format-Table DisplayName,DisplayValue,NumericParameterMaxValue,ValidDisplayValues}
 }
 
 
@@ -19,7 +19,7 @@ Function Set-UdpExemptPortRange($UdpExemptPortRange)
 }
 
 
-Function Sort-GpxFile($InputFileName, $OutputFileName)
+Function Repair-GpxFile($InputFileName, $OutputFileName)
 {
     # See also: https://personalnexus.wordpress.com/2018/09/26/the-case-of-lightroom-placing-all-photos-at-the-end-of-the-track-sorting-a-gpx-file/
 
@@ -90,7 +90,7 @@ Function Set-WorkStationLockTime($Time = '7PM')
 
     Register-ScheduledTask -Action $scheduledTaskAction -Trigger $scheduledTaskTrigger -TaskName $scheduledTaskName -Description "Lock the workstation at $Time" | Out-Null
     
-    Get-ScheduledTask $scheduledTaskName | fl TaskName,Description,State
+    Get-ScheduledTask $scheduledTaskName | Format-List TaskName,Description,State
 }
 
 Function Start-PerformanceLog($LogFilePath, 
@@ -99,7 +99,7 @@ Function Start-PerformanceLog($LogFilePath,
                               $StopTime = (New-TimeSpan -Hours 23 -Minutes 59 -Seconds 59), 
                               $IntervalSeconds = 30)
 {
-    if ($Counters -eq $null)
+    if ($null -eq $Counters)
     {
         $Counters = @("IDProcess",
                       "Name",
@@ -132,7 +132,7 @@ Function Start-PerformanceLog($LogFilePath,
     while ((Get-Date).TimeOfDay -lt $StopTime )
     {
         $Iterations += 1   
-        Get-WmiObject Win32_PerfFormattedData_PerfProc_Process | ` 
+        Get-WmiObject Win32_PerfFormattedData_PerfProc_Process | `
             Select-Object $Counters | `
             Export-Csv -Path $LogFilePath -Delimiter ";" -Force -Append -NoTypeInformation
         Start-Sleep -Seconds $IntervalSeconds
